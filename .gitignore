@@ -1,0 +1,6 @@
+# the ROMs are yours, they are never committed
+roms/*
+!roms/put_roms_here.md
+output/
+runtime/
+__pycache__/

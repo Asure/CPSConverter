@@ -1,0 +1,80 @@
+--- a/src/mame/capcom/cps2.cpp
++++ b/src/mame/capcom/cps2.cpp
+@@ -12541,6 +12541,60 @@
+ 
+ 	ROM_REGION( 0x20, "key", 0 )
+ 	ROM_LOAD( "phoenix.key",  0x000000, 0x000014, CRC(2cf772b0) SHA1(eff33c65a4f3862c231f9e4d6fefa7b34398dbf2) )
++ROM_END
++
++ROM_START( dino2c )
++	ROM_REGION( CODE_SIZE, "maincpu", 0 ) // 68000 code (decrypted, CPS1 Cadillacs and Dinosaurs port with fixes and overlay)
++	ROM_LOAD16_WORD_SWAP( "dino2c.03", 0x000000, 0x80000, CRC(e995da40) SHA1(7a10e733b8c45495d937f263ea2be80acf3426d6) )
++	ROM_LOAD16_WORD_SWAP( "dino2c.04", 0x080000, 0x80000, CRC(61f1f75d) SHA1(7ddcc0dc1219984d6417080dfb092deaeb0b913a) )
++	ROM_LOAD16_WORD_SWAP( "dino2c.05", 0x100000, 0x80000, CRC(66d23de2) SHA1(19b8a365f630411d524d055459020f4c8cf930f1) )
++	ROM_LOAD16_WORD_SWAP( "dino2c.06", 0x180000, 0x80000, CRC(8e124d66) SHA1(41bee0151d00744bddb42fef925b9e3f4bea4f02) )
++
++	ROM_REGION16_BE( CODE_SIZE, "user1", 0 )
++	ROM_FILL( 0x000000, 0x100000, 0x00 )
++
++	ROM_REGION( 0x1000000, "gfx", 0 )
++	ROM_LOAD64_WORD( "dino2c.13m", 0x0000000, 0x400000, CRC(d531fd31) SHA1(a4c2e9a20771612898982a828e6e72423c462270) )
++	ROM_LOAD64_WORD( "dino2c.15m", 0x0000002, 0x400000, CRC(4db5f4ff) SHA1(3b55c87900a7321774250054f54f7a3b6d3a87b1) )
++	ROM_LOAD64_WORD( "dino2c.17m", 0x0000004, 0x400000, CRC(cf7af7a1) SHA1(2cb5e452c21011c2deb61bc1a075d1a5294cf711) )
++	ROM_LOAD64_WORD( "dino2c.19m", 0x0000006, 0x400000, CRC(09b6fa3f) SHA1(8f084b50187e655b6ab2a7f80a61847103692c36) )
++
++	ROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) // 64k for the audio CPU (+banks)
++	ROM_LOAD( "dino.01", 0x00000, 0x08000, CRC(1ac4eda1) SHA1(89cdd91cb4927607902896ac3ad4d97e7576a20f) )
++	ROM_CONTINUE(         0x10000, 0x18000 )
++
++	ROM_REGION( 0x400000, "qsound", 0 ) // QSound samples
++	ROM_LOAD16_WORD_SWAP( "dino.11m", 0x000000, 0x400000, CRC(a65584f4) SHA1(6beb2bcd4fe34afcf35a5d4b7df7ae0c1f2de9bb) )
++
++	ROM_REGION( 0x20, "key", 0 )
++	ROM_LOAD( "phoenix.key", 0x000000, 0x000014, CRC(2cf772b0) SHA1(eff33c65a4f3862c231f9e4d6fefa7b34398dbf2) )
++ROM_END
++
++ROM_START( neopuni2 )
++	ROM_REGION( CODE_SIZE, "maincpu", 0 ) // 68000 code (decrypted, CPS1 Punisher port with fixes and overlay)
++	ROM_LOAD16_WORD_SWAP( "neopuni.03", 0x000000, 0x80000, CRC(f68a92ae) SHA1(08491dbdea75db07bf635a651d2d6b3fe655d9ed) )
++	ROM_LOAD16_WORD_SWAP( "neopuni.04", 0x080000, 0x80000, CRC(64a5ff42) SHA1(c1713bafc63742431bf1f60f34e98694d0d1612d) )
++	ROM_LOAD16_WORD_SWAP( "neopuni.05", 0x100000, 0x80000, CRC(8affa5a9) SHA1(268760b83b1723ff50a019ec51ef7af2e49935bf) )
++	ROM_LOAD16_WORD_SWAP( "neopuni2.06", 0x180000, 0x80000, CRC(85358c1a) SHA1(3491433b64214d98365dc9215c9dc2a13a0dc131) )
++	ROM_LOAD16_WORD_SWAP( "neopuni.07", 0x200000, 0x80000, CRC(504bf849) SHA1(13a184ec9e176371808938015111f8918cb4df7d) )
++	ROM_LOAD16_WORD_SWAP( "neopuni.08", 0x280000, 0x80000, CRC(504bf849) SHA1(13a184ec9e176371808938015111f8918cb4df7d) )
++	ROM_LOAD16_WORD_SWAP( "neopuni.09", 0x300000, 0x80000, CRC(504bf849) SHA1(13a184ec9e176371808938015111f8918cb4df7d) )
++
++	ROM_REGION( 0x1000000, "gfx", 0 )
++	ROM_LOAD64_WORD( "neopuni2.13m", 0x0000000, 0x400000, CRC(f02631f5) SHA1(e2898933212aab90747c1a42a268a8246b019d58) )
++	ROM_LOAD64_WORD( "neopuni2.15m", 0x0000002, 0x400000, CRC(b8d541d2) SHA1(3896fb3d99d5e3d1fe659b3755444c9633bd8f0a) )
++	ROM_LOAD64_WORD( "neopuni2.17m", 0x0000004, 0x400000, CRC(1f26a7b6) SHA1(d29c6ddd150d132904bbfe0cc81b5d7b5f149b97) )
++	ROM_LOAD64_WORD( "neopuni2.19m", 0x0000006, 0x400000, CRC(ca722725) SHA1(2f81a333a819ccb0b07218e879e571daad00b254) )
++
++	ROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) // 64k for the audio CPU (+banks)
++	ROM_LOAD( "neopuni.01", 0x00000, 0x08000, CRC(749d5466) SHA1(c05aab0efbed9306f488af3167789bf01bd8e4f3) )
++	ROM_CONTINUE(         0x10000, 0x18000 )
++
++	ROM_REGION( 0x400000, "qsound", 0 ) // QSound samples
++	ROM_LOAD16_WORD_SWAP( "neopuni.11m", 0x000000, 0x400000, CRC(5ed2c629) SHA1(3d1f61a3c607d367c44e30b14d38a9470b1721d6) )
++
++	ROM_REGION( 0x20, "key", 0 )
++	ROM_LOAD( "phoenix.key", 0x000000, 0x000014, CRC(2cf772b0) SHA1(eff33c65a4f3862c231f9e4d6fefa7b34398dbf2) )
+ ROM_END
+ 
+ } // anonymous namespace
+@@ -12893,3 +12947,5 @@
+ GAME( 2001, progearjbl, progear,  dead_cps2,     cps2_2p3b, cps2_state, init_cps2,     ROT0,   "bootleg", "Progear no Arashi (Japan 010117) (decrypted bootleg)",                                       MACHINE_SUPPORTS_SAVE ) // Not an actual phoenix set, but works as one
+ GAME( 2001, pzloop2jd,  pzloop2,  dead_cps2,     pzloop2,   cps2_state, init_pzloop2,  ROT0,   "bootleg", "Puzz Loop 2 (Japan 010226 Phoenix Edition) (bootleg)",                                       MACHINE_SUPPORTS_SAVE )
+ GAME( 2004, hsf2d,      hsf2,     dead_cps2,     cps2_2p6b, cps2_state, init_cps2,     ROT0,   "bootleg", "Hyper Street Fighter II: The Anniversary Edition (Asia 040202 Phoenix Edition) (bootleg)",   MACHINE_SUPPORTS_SAVE )
++GAME( 1993, dino2c,      0,           dead_cps2, cps2_3p3b,     cps2_state, init_cps2, ROT0, "bootleg", "Cadillacs and Dinosaurs (CPS2 port, USA, fixed, with overlay)", MACHINE_SUPPORTS_SAVE )
++GAME( 1993, neopuni2,    0,           dead_cps2, cps2_2p2b,     cps2_state, init_cps2, ROT0, "bootleg", "The Punisher (CPS2 port, USA, fixed, with overlay)", MACHINE_SUPPORTS_SAVE )
+--- a/src/mame/mame.lst
++++ b/src/mame/mame.lst
+@@ -16541,6 +16541,8 @@
+ xmvsfu1d
+ xmvsfur1
+ xmvsfur2
++dino2c
++neopuni2
+ 
+ @source:capcom/cps3.cpp
+ cps3boot
