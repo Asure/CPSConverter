@@ -208,3 +208,8 @@ redistribute the data files.
 
 `tools/make_data.py` expects the finished sets in the author's research repository (`dino/romsets/dino2c.zip`, `punisher/romsets/neopuni2.zip`), so it only works there. When those sets change (new overlay scenes, fixes), rebuild the sets as before, then run `python3 tools/make_data.py` and
 `python3 tools/make_mame_patch.py <clean cps2.cpp> <clean mame.lst>`; `python3 cps2fix.py` must then report all files ok.
+
+## License
+
+cps2fix (the tool, the launchers, the maintainer scripts and the driver patch) is free software under the **GNU General Public License v3.0**, see `LICENSE`.
+The licence covers this tool only. It gives no rights to the games' ROMs, to Capcom's code, or to the third-party CPS2 conversions the data files build on.

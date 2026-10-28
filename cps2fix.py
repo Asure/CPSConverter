@@ -5,7 +5,9 @@ You supply the original MAME zips (roms/), the tool checks every file by CRC32 b
 the CPS2 files and writes a MAME set and a Darksoft set per game. See README.md.
 
 usage: python3 cps2fix.py [--roms DIR] [--out DIR] [--game dino|punisher|all] [--no-mame] [--no-darksoft] [--check]
-Python 3.6 or newer, standard library only."""
+Python 3.6 or newer, standard library only.
+
+Licensed under the GNU General Public License v3.0 (see LICENSE)."""
 import argparse
 import hashlib
 import json
