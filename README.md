@@ -1,6 +1,6 @@
-# cps2fix - Cadillacs & Dinosaurs and The Punisher for CPS2, built from your own ROMs
+# cps2fix - Cadillacs & Dinosaurs, The Punisher and Warriors of Fate for CPS2, built from your own ROMs
 
-One click turns the original CPS1 ROM zips of **Cadillacs and Dinosaurs** and **The Punisher** into the fixed CPS2 versions that run on a real CPS2
+One click turns the original CPS1 ROM zips of **Cadillacs and Dinosaurs**, **The Punisher** and **Warriors of Fate** (the CPS Changer version) into the fixed CPS2 versions that run on a real CPS2
 board (a Darksoft multi-board, tested) and in MAME. You supply the original zips; nothing in this folder contains a ROM of the games, only the
 changes (see "What is in the data files" below).
 
@@ -13,8 +13,10 @@ It takes about 20 seconds and writes everything into the `output` folder:
 output/
   mame/dino2c.zip            MAME set  (needs the MAME driver patch, see "MAME")
   mame/neopuni2.zip          MAME set
+  mame/wof2.zip              MAME set
   darksoft/dino2c/           Darksoft multi-board files (copy the folder content to the card)
   darksoft/neopuni2/
+  darksoft/wof2/
 ```
 
 ## What you need
@@ -26,6 +28,7 @@ clone zip (`dinou`, `punisheru`) holds only the files that differ from its paren
 | Game | Zips | MAME name / region |
 |---|---|---|
 | Cadillacs and Dinosaurs | `dinou.zip` + `dino.zip` | `dinou` USA 930201 (68000 code) + `dino` World 930201 (graphics, sound, one program ROM) |
+| Warriors of Fate / Tenchi wo Kurau II | `wofch.zip` | `wofch` CPS Changer (home unit) dump: everything in one zip (68000 code, graphics, Kabuki-encrypted sound program, samples). The arcade sets `wof`, `wofu`, `wofj` are other programs and are not used |
 | The Punisher | `punisheru.zip` + `punisher.zip` | `punisheru` USA 930422 (68000 code) + `punisher` World 930422 (graphics, sound, one program ROM) |
 
 `dinoa.zip` (Asia) and `punisherj.zip` (Japan) may sit in the folder too. They are recognised and ignored, see "Regions".
@@ -50,6 +53,33 @@ clone zip (`dinou`, `punisheru`) holds only the files that differ from its paren
 | `cd-q2.2k` | 524288 | `770f4c47` | `dino.zip` |
 | `cd-q3.3k` | 524288 | `2f273ffc` | `dino.zip` |
 | `cd-q4.4k` | 524288 | `2c67821d` | `dino.zip` |
+
+### Warriors of Fate - files checked (`wofch.zip`)
+
+| File | Size | CRC32 |
+|---|---:|---|
+| `tk2=ch=_23.8f` | 524288 | `4e0b8dee` |
+| `tk2=ch=_22.7f` | 524288 | `d0937a8d` |
+| `tk2-1m.3a` | 524288 | `0d9cb9bf` |
+| `tk2-3m.5a` | 524288 | `45227027` |
+| `tk2-2m.4a` | 524288 | `c5ca2460` |
+| `tk2-4m.6a` | 524288 | `e349551c` |
+| `tk2=ch=_05.7a` | 524288 | `e4a44d53` |
+| `tk2=ch=_06.8a` | 524288 | `58066ba8` |
+| `tk2=ch=_07.9a` | 524288 | `cc9006c9` |
+| `tk2=ch=_08.10a` | 524288 | `d4a19a02` |
+| `tk2_qa.5k` | 131072 | `c9183a0d` |
+| `tk2-q1.1k` | 524288 | `611268cf` |
+| `tk2-q2.2k` | 524288 | `20f55ca9` |
+| `tk2-q3.3k` | 524288 | `bfcf6f52` |
+| `tk2-q4.4k` | 524288 | `36642e88` |
+
+The Warriors of Fate set is built differently from the other two: the 68000 program is the Changer program with the CPS2 boot patches (about 540 bytes),
+the Z80 sound program is Kabuki-decrypted by the tool itself (the data file only says which address ranges are fetched as opcodes, no code),
+and the overlay (foreground tiles that cover sprites on CPS1 through pen masks) is a small code block plus about 20,000 graphics tiles baked by the tool
+from your graphics. The Changer's own menu (1P Start + 1P Select) opens with the test button (F2 in MAME); the password screen accepts any password.
+
+**Changer menu (Warriors of Fate):** hold the test button (F2 in MAME, the test switch on a CPS2 board) on the title screen to open the CPS Changer's menu with its settings. The test switch is mapped to the Changer's own 1P Start + 1P Select combination; the password screen accepts any password.
 
 ### The Punisher - files checked
 
@@ -153,7 +183,7 @@ continue screen sprite priority, the coin lockout and the lifebar. Details: `pun
 
 ## MAME
 
-The two sets need two driver entries, `dino2c` and `neopuni2`, in a MAME that has the CPS2 driver. `mame/cps2fix_drivers.patch` adds them (to
+The three sets need three driver entries, `dino2c`, `neopuni2` and `wof2`, in a MAME that has the CPS2 driver. `mame/cps2fix_drivers.patch` adds them (to
 `src/mame/capcom/cps2.cpp` and `src/mame/mame.lst`, with the real CRCs). In the MAME source folder:
 
 ```
@@ -170,7 +200,7 @@ make SOURCES=src/mame/capcom/cps1.cpp,src/mame/capcom/cps2.cpp SUBTARGET=cps2fix
 Copy the **content** of `output/darksoft/dino2c` (or `neopuni2`) to a folder on the card as for any Darksoft game. The files are `NAME`, `key`
 and `flash.01 .02 .03 .05 .07 .09 .11` (4 MB each): `flash.01` Z80 program (32 copies), `flash.02` the 68000 program files one after another (padded
 with `FF`), `flash.03` the QSound samples, `flash.05/.07/.09/.11` the graphics, `key` the null phoenix key (the program is not encrypted), `NAME` the title
-(`Dino CPS2 Port`, `PunisherNeoCPS`, 14 characters + `=W`).
+(`Dino CPS2 Port`, `PunisherNeoCPS`, `WoF CPS2 Port `, 14 characters + `=W`).
 
 ## Troubleshooting
 

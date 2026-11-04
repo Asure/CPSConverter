@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Maintainer tool: writes mame/cps2fix_drivers.patch (adds the sets dino2c and neopuni2, with the real CRCs and SHA1s of the files cps2fix.py
+"""Maintainer tool: writes mame/cps2fix_drivers.patch (adds the sets dino2c, neopuni2 and wof2, with the real CRCs and SHA1s of the files cps2fix.py
 builds, to src/mame/capcom/cps2.cpp and src/mame/mame.lst of a MAME source tree).
 usage: python3 tools/make_mame_patch.py <cps2.cpp of a clean MAME tree> <mame.lst of the same tree>"""
 import difflib
@@ -51,15 +51,34 @@ def puni_block():
     return L
 
 
+def wof_block():
+    m = mf["wof2"]
+    L = ["ROM_START( wof2 )",
+         '\tROM_REGION( CODE_SIZE, "maincpu", 0 ) // 68000 code: CPS Changer Warriors of Fate with CPS2 boot patches, the overlay + shim code at 100000']
+    for n, off, sz in (("wof2.03", 0, 0x80000), ("wof2.04", 0x80000, 0x80000), ("wof2.shim", 0x100000, 0x20000)):
+        L.append('\tROM_LOAD16_WORD_SWAP( "%s", 0x%06x, 0x%05x, %s )' % (n, off, sz, h(n, m)))
+    L += ["", '\tROM_REGION16_BE( CODE_SIZE, "user1", 0 )', "\tROM_FILL( 0x000000, 0x100000, 0x00 )", "",
+          '\tROM_REGION( 0x1000000, "gfx", 0 )']
+    for i, n in enumerate(("wof2.13m", "wof2.15m", "wof2.17m", "wof2.19m")):
+        L.append('\tROM_LOAD64_WORD( "%s", 0x%07x, 0x400000, %s )' % (n, i * 2, h(n, m)))
+    L += ["", '\tROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) // 64k for the audio CPU (+banks); plain (decrypted) code',
+          '\tROM_LOAD( "wof2.01", 0x00000, 0x08000, %s )' % h("wof2.01", m), "\tROM_CONTINUE(         0x10000, 0x18000 )", "",
+          '\tROM_REGION( 0x400000, "qsound", 0 ) // QSound samples',
+          '\tROM_LOAD16_WORD_SWAP( "wof2.11m", 0x000000, 0x400000, %s )' % h("wof2.11m", m), "",
+          '\tROM_REGION( 0x20, "key", 0 )', '\tROM_LOAD( "phoenix.key", 0x000000, 0x000014, %s )' % h("phoenix.key", m), "ROM_END", ""]
+    return L
+
+
 GAMES = [
     'GAME( 1993, dino2c,      0,           dead_cps2, cps2_3p3b,     cps2_state, init_cps2, ROT0, "bootleg", "Cadillacs and Dinosaurs (CPS2 port, USA, fixed, with overlay)", MACHINE_SUPPORTS_SAVE )',
     'GAME( 1993, neopuni2,    0,           dead_cps2, cps2_2p2b,     cps2_state, init_cps2, ROT0, "bootleg", "The Punisher (CPS2 port, USA, fixed, with overlay)", MACHINE_SUPPORTS_SAVE )',
+    'GAME( 1992, wof2,        0,           dead_cps2, cps2_3p3b,     cps2_state, init_cps2, ROT0, "bootleg", "Warriors of Fate (CPS2 port of the CPS Changer program, fixed, with overlay)", MACHINE_SUPPORTS_SAVE | MACHINE_UNOFFICIAL )',
 ]
 cpp = open(sys.argv[1]).read().splitlines()
 lst = open(sys.argv[2]).read().splitlines()
 new = list(cpp)
 i = new.index("} // anonymous namespace")
-new[i:i] = dino_block() + puni_block()
+new[i:i] = dino_block() + puni_block() + wof_block()
 while new and new[-1] == "":
     new.pop()
 new += GAMES
@@ -69,7 +88,7 @@ k = j + 1
 while k < len(lst) and lst[k].strip():
     k += 1
 nl = list(lst)
-nl[k:k] = ["dino2c", "neopuni2"]
+nl[k:k] = ["dino2c", "neopuni2", "wof2"]
 out += list(difflib.unified_diff(lst, nl, "a/src/mame/mame.lst", "b/src/mame/mame.lst", lineterm="", n=3))
 open(os.path.join(REL, "mame", "cps2fix_drivers.patch"), "w").write("\n".join(out) + "\n")
 print("wrote mame/cps2fix_drivers.patch")

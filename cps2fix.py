@@ -4,7 +4,7 @@
 You supply the original MAME zips (roms/), the tool checks every file by CRC32 before it does anything, builds
 the CPS2 files and writes a MAME set and a Darksoft set per game. See README.md.
 
-usage: python3 cps2fix.py [--roms DIR] [--out DIR] [--game dino|punisher|all] [--no-mame] [--no-darksoft] [--check]
+usage: python3 cps2fix.py [--roms DIR] [--out DIR] [--game dino|punisher|wofch|all] [--no-mame] [--no-darksoft] [--check]
 Python 3.6 or newer, standard library only.
 
 Licensed under the GNU General Public License v3.0 (see LICENSE)."""
@@ -50,6 +50,16 @@ PUNI_FILES = [
     ("ps-q1.1k", 0x80000, 0x31fd8726, "punisher"), ("ps-q2.2k", 0x80000, 0x980a9eef, "punisher"),
     ("ps-q3.3k", 0x80000, 0x0dd44491, "punisher"), ("ps-q4.4k", 0x80000, 0xbed42f03, "punisher"),
 ]
+WOF_FILES = [
+    ("tk2=ch=_23.8f", 0x80000, 0x4e0b8dee, "wofch"), ("tk2=ch=_22.7f", 0x80000, 0xd0937a8d, "wofch"),
+    ("tk2-1m.3a", 0x80000, 0x0d9cb9bf, "wofch"), ("tk2-3m.5a", 0x80000, 0x45227027, "wofch"),
+    ("tk2-2m.4a", 0x80000, 0xc5ca2460, "wofch"), ("tk2-4m.6a", 0x80000, 0xe349551c, "wofch"),
+    ("tk2=ch=_05.7a", 0x80000, 0xe4a44d53, "wofch"), ("tk2=ch=_06.8a", 0x80000, 0x58066ba8, "wofch"),
+    ("tk2=ch=_07.9a", 0x80000, 0xcc9006c9, "wofch"), ("tk2=ch=_08.10a", 0x80000, 0xd4a19a02, "wofch"),
+    ("tk2_qa.5k", 0x20000, 0xc9183a0d, "wofch"),
+    ("tk2-q1.1k", 0x80000, 0x611268cf, "wofch"), ("tk2-q2.2k", 0x80000, 0x20f55ca9, "wofch"),
+    ("tk2-q3.3k", 0x80000, 0xbfcf6f52, "wofch"), ("tk2-q4.4k", 0x80000, 0x36642e88, "wofch"),
+]
 # 68000 code of the other regional sets: recognised (and reported) but not converted, see README.md
 OTHER_SETS = [
     ("dino", "Cadillacs: Kyouryuu-Shin Seiki (World 930201)", [0x8f4e585e, 0x9278aa12, 0x66d23de2]),
@@ -58,6 +68,7 @@ OTHER_SETS = [
     ("punisher", "The Punisher (World 930422)", [0x389a99d2, 0x68fb06ac, 0x3eb181c3, 0x37108e7b]),
     ("punisherj", "The Punisher (Japan 930422)", [0x6b2fda52, 0xe01036bc]),
     ("punisheru", "The Punisher (USA 930422)", [0x9236d121, 0x8320e501, 0x61c960a1, 0x78d4c298]),
+    ("wofch", "Warriors of Fate / Tenchi wo Kurau II (CPS Changer)", [0x4e0b8dee, 0xd0937a8d]),
 ]
 
 
@@ -369,6 +380,94 @@ def bake_puni(f, out, log, mask=0x7001):
 
 
 # --------------------------------------------------------------------------------------------------------------------
+# Warriors of Fate / Tenchi wo Kurau II (CPS Changer program)
+# --------------------------------------------------------------------------------------------------------------------
+def _bitswap(src, key, select, order):
+    pairs = [(0, 0x01, 0x02, 0xfc), (4, 0x04, 0x08, 0xf3), (8, 0x10, 0x20, 0xcf), (12, 0x40, 0x80, 0x3f)]
+    for sh, lo, hi, keep in (pairs if order == 1 else pairs[::-1]):
+        ksh = sh if order == 1 else 12 - sh
+        if select & (1 << ((key >> ksh) & 7)):
+            src = (src & keep) | ((src & lo) << 1) | ((src & hi) >> 1)
+    return src
+
+
+def _rol(v):
+    return ((v & 0x7f) << 1) | (v >> 7)
+
+
+def _bytedecode(src, k1, k2, xk, sel):
+    src = _bitswap(src, k1 & 0xffff, sel & 0xff, 1)
+    src = _rol(src)
+    src = _bitswap(src, k1 >> 16, sel & 0xff, 2)
+    src ^= xk
+    src = _rol(src)
+    src = _bitswap(src, k2 & 0xffff, sel >> 8, 2)
+    src = _rol(src)
+    return _bitswap(src, k2 >> 16, sel >> 8, 1)
+
+
+def kabuki_views(rom, k1=0x01234567, k2=0x54163072, ak=0x5151, xk=0x51):
+    """the two views of the Kabuki-encrypted Z80 code (first 32 KB): the opcode fetch view and the data/operand view"""
+    op, da = bytearray(), bytearray()
+    for a in range(0x8000):
+        op.append(_bytedecode(rom[a], k1, k2, xk, (a + ak) & 0xffff))
+        da.append(_bytedecode(rom[a], k1, k2, xk, ((a ^ 0x1fc0) + ak + 1) & 0xffff))
+    return bytes(op), bytes(da)
+
+
+def wof_map():
+    with open(os.path.join(DATA, "wof2_map.json")) as fh:
+        return json.load(fh)
+
+
+def build_wof(f):
+    out = {}
+    out["wof2.03"] = bytes(f["tk2=ch=_23.8f"])
+    out["wof2.04"] = bytes(f["tk2=ch=_22.7f"])
+    out["wof2.shim"] = bytes(0x20000)
+    z = f["tk2_qa.5k"]
+    op, da = kabuki_views(z)
+    code = bytearray(da)                   # the CPS2 board runs plain code: opcode fetches need the opcode view, operands the data view
+    for lo, hi in wof_map()["z80_op"]:     # (address ranges only: which bytes are fetched as opcodes)
+        code[lo:hi] = op[lo:hi]
+    out["wof2.01"] = bytes(code) + bytes(z[0x8000:])
+    out["wof2.11m"] = samples(f, ["tk2-q1.1k", "tk2-q2.2k", "tk2-q3.3k", "tk2-q4.4k"])
+    out["phoenix.key"] = b"\xff" * 20
+    return out
+
+
+def bake_wof(f, out, log):
+    names = {"1m": "tk2-1m.3a", "3m": "tk2-3m.5a", "2m": "tk2-2m.4a", "4m": "tk2-4m.6a",
+             "5m": "tk2=ch=_05.7a", "7m": "tk2=ch=_06.8a", "6m": "tk2=ch=_07.9a", "8m": "tk2=ch=_08.10a"}
+    g1 = cps1_graphics({k: f[v] for k, v in names.items()}, GFX_ORDER)
+    dec = bytearray(0x1000000)
+    dec[0:0x400000] = g1                   # sprite half: elements 0000-7FFF
+    dec[0x800000:0xC00000] = g1            # scroll half: elements 10000-17FFF
+    for e0, e1 in ((0x8000, 0x10000), (0x18000, 0x20000)):
+        dec[e0 * 128:e1 * 128] = b"\xff" * ((e1 - e0) * 128)     # free elements: transparent
+    m = wof_map()
+    n = 0
+    for mask, lo, hi, base in m["regions"]:         # scroll 2: pen-masked copies of the tiles
+        for c in range(lo, hi + 1):
+            for r in range(16):
+                s = (0x10000 + c) * 128 + r * 8
+                d = (base + c - lo) * 128 + r * 8
+                dec[d:d + 8] = baked_row(bytes(dec[s:s + 8]), mask)
+            n += 1
+    el3, lo3, n3 = m["scroll3"]                      # scroll 3: the 32 x 32 tiles rebuilt as 2 x 2 blocks of 16 x 16 cells
+    for k in range(n3):
+        w = 0x100000 + (lo3 + k) * 64
+        e = el3 + (k >> 3) * 32 + (k & 7) * 2
+        for r in range(16):
+            for cell, unit in ((e, w + 2 * r), (e + 1, w + 2 * r + 1), (e + 16, w + 2 * (r + 16)), (e + 17, w + 2 * (r + 16) + 1)):
+                dec[cell * 128 + r * 8:cell * 128 + r * 8 + 8] = dec[unit * 8:unit * 8 + 8]
+        n += 1
+    log("    baked %d tiles" % n)
+    for k, fl in enumerate(region_to_files(dec)):
+        out["wof2.%sm" % ("13", "15", "17", "19")[k]] = bytes(fl)
+
+
+# --------------------------------------------------------------------------------------------------------------------
 # the delta: what differs from the plain conversion (68000 changes, the Z80 code, the code in the extra program file)
 # --------------------------------------------------------------------------------------------------------------------
 def read_delta(path):
@@ -453,6 +552,12 @@ GAMES = {
         prog=["neopuni.03", "neopuni.04", "neopuni.05", "neopuni2.06", "neopuni.07", "neopuni.08", "neopuni.09"],
         z80="neopuni.01", samples="neopuni.11m",
         gfx=["neopuni2.13m", "neopuni2.15m", "neopuni2.17m", "neopuni2.19m"], ds_name="PunisherNeoCPS"),
+    "wofch": dict(
+        title="Warriors of Fate / Tenchi wo Kurau II (CPS Changer) -> CPS2", files=WOF_FILES, mame="wof2",
+        delta="wof2.delta", build=build_wof, bake=bake_wof,
+        zip_order=["wof2.03", "wof2.04", "wof2.shim", "wof2.13m", "wof2.15m", "wof2.17m", "wof2.19m", "wof2.01", "wof2.11m", "phoenix.key"],
+        prog=["wof2.03", "wof2.04", "wof2.shim"], z80="wof2.01", samples="wof2.11m",
+        gfx=["wof2.13m", "wof2.15m", "wof2.17m", "wof2.19m"], ds_name="WoF CPS2 Port"),
 }
 
 
@@ -494,7 +599,7 @@ def write_darksoft(folder, g, out):
     prog = b"".join(out[n] for n in g["prog"])
     assert len(prog) <= 0x400000
     files = {
-        "NAME": (g["ds_name"] + "=W").encode(),
+        "NAME": (g["ds_name"].ljust(14)[:14] + "=W").encode(),
         "flash.01": out[g["z80"]] * 32,
         "flash.02": prog + b"\xff" * (0x400000 - len(prog)),
         "flash.03": out[g["samples"]],
@@ -511,7 +616,7 @@ def main():
     ap = argparse.ArgumentParser(description="Builds fixed CPS2 sets of Cadillacs & Dinosaurs and The Punisher from the original CPS1 zips.")
     ap.add_argument("--roms", default=os.path.join(HERE, "roms"), help="folder with the original zips (default: roms next to this script)")
     ap.add_argument("--out", default=os.path.join(HERE, "output"), help="output folder (default: output next to this script)")
-    ap.add_argument("--game", default="all", choices=["all", "dino", "punisher"])
+    ap.add_argument("--game", default="all", choices=["all", "dino", "punisher", "wofch"])
     ap.add_argument("--no-mame", action="store_true", help="do not write the MAME zips")
     ap.add_argument("--no-darksoft", action="store_true", help="do not write the Darksoft folders")
     ap.add_argument("--check", action="store_true", help="only check the input files")
@@ -526,7 +631,7 @@ def main():
     # which regional sets are present (informational)
     for name, desc, crcs in OTHER_SETS:
         if any(index.has(c, 0x80000) or index.has(c, 0x20000) for c in crcs[:2]):
-            if name in ("dinou", "punisheru"):
+            if name in ("dinou", "punisheru", "wofch"):
                 used = "used (68000 code)"
             elif name in ("dino", "punisher"):
                 used = "used as the parent set (graphics, sound and shared program ROM; its own 68000 code is another revision)"
@@ -534,7 +639,7 @@ def main():
                 used = "recognised, not used (its 68000 code is another revision, see README.md)"
             print("  set %-10s %s: %s" % (name, desc, used))
     results = {}
-    for key in (["dino", "punisher"] if a.game == "all" else [a.game]):
+    for key in (["dino", "punisher", "wofch"] if a.game == "all" else [a.game]):
         g = GAMES[key]
         print("\n== %s ==" % g["title"])
         print("  checking the original files:")
