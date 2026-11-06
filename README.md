@@ -81,6 +81,8 @@ from your graphics. The Changer's own menu (1P Start + 1P Select) opens with the
 
 **Changer menu (Warriors of Fate):** hold the test button (F2 in MAME, the test switch on a CPS2 board) on the title screen to open the CPS Changer's menu with its settings. The test switch is mapped to the Changer's own 1P Start + 1P Select combination; the password screen accepts any password.
 
+**Debug aid (Warriors of Fate):** hold 1P Start for 3 seconds during play to kill all enemies on the stage (repeats every 3 seconds while held). It is only meant for testing the long game on a real board.
+
 ### The Punisher - files checked
 
 | File (inside the zip) | Size | CRC32 | Zip |
